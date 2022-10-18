@@ -1,3 +1,5 @@
+require 'helper'
+
 class Board
   attr_reader :cells
 
@@ -9,18 +11,28 @@ class Board
     @bottom_clue = bottom_clue || ([nil] * size)
     @right_clue = right_clue || ([nil] * size)
     @queue = Queue.new
-    preprocess
   end
 
-  def preprocess
-    preprocess_top_clue
-    preprocess_left_clue
-    preprocess_bottom_clue
-    preprocess_right_clue
+  def process(max_iter = 1000)
+    count = 0
+    until solved? || count >= max_iter
+      exhaustive_scan
+      step until @queue.empty?
+      count += 1
+    end
+    pp @cells
+    p "#{solved? ? 'Solved' : 'Failed to solve'} in #{count} iterations"
   end
 
-  def process
-    step until @queue.empty?
+  private
+
+  def solved?
+    @cells.all? { |row| row.all? { |cell| cell.length == 1 } }
+  end
+
+  def exhaustive_scan
+    @size.times { |i| bruteforce_row(i) }
+    @size.times { |j| bruteforce_col(j) }
   end
 
   def step
@@ -28,69 +40,10 @@ class Board
     set_cell(row, col, value)
   end
 
-  def queue_length
-    @queue.length
-  end
-
-  private
-
-  def preprocess_top_clue
-    @top_clue.each_with_index do |clue, j|
-      case clue
-      when 1
-        @queue << [0, j, @size]
-      when @size
-        @size.times do |i|
-          @queue << [i, j, i + 1]
-        end
-      end
-    end
-  end
-
-  def preprocess_left_clue
-    @left_clue.each_with_index do |clue, i|
-      case clue
-      when 1
-        @queue << [i, 0, @size]
-      when @size
-        @size.times do |j|
-          @queue << [i, j, j + 1]
-        end
-      end
-    end
-  end
-
-  def preprocess_bottom_clue
-    @bottom_clue.each_with_index do |clue, j|
-      case clue
-      when 1
-        @queue << [@size - 1, j, @size]
-      when @size
-        @size.times do |i|
-          @queue << [i, j, @size - i]
-        end
-      end
-    end
-  end
-
-  def preprocess_right_clue
-    @right_clue.each_with_index do |clue, i|
-      case clue
-      when 1
-        @queue << [i, @size - 1, @size]
-      when @size
-        @size.times do |j|
-          @queue << [i, j, @size - j]
-        end
-      end
-    end
-  end
-
   def set_cell(row, col, value)
     raise "Invalid value #{value} for cell (#{row}, #{col})" unless @cells[row][col].include?(value)
 
     @cells[row][col] = Set.new([value])
-
     eliminate_value_from_whole_row_and_col(row, col, value)
   end
 
@@ -110,5 +63,47 @@ class Board
 
     @cells[row][col].delete(value)
     @queue << [row, col, @cells[row][col].first] if @cells[row][col].size == 1
+  end
+
+  def bruteforce_row(row)
+    previous_value = @cells[row]
+    valid_combinations = generate_valid_combinations(previous_value, @left_clue[row], @right_clue[row])
+    update_possible_combination_on_row(valid_combinations, row)
+  end
+
+  def bruteforce_col(col)
+    previous_value = @cells.map { |row| row[col] }
+    valid_combinations = generate_valid_combinations(previous_value, @top_clue[col], @bottom_clue[col])
+    update_possible_combination_on_col(valid_combinations, col)
+  end
+
+  def update_possible_combination_on_row(updated_value, row)
+    updated_value.each_with_index do |cell, col|
+      @cells[row][col] = cell
+      @queue << [row, col, cell.first] if cell.size == 1
+    end
+  end
+
+  def update_possible_combination_on_col(updated_value, col)
+    updated_value.each_with_index do |cell, row|
+      @cells[row][col] = cell
+      @queue << [row, col, cell.first] if cell.size == 1
+    end
+  end
+
+  def matches_clue?(combination, clue, reverse_clue)
+    count_visible_building(combination) == clue || count_visible_building(combination.reverse) == reverse_clue
+  end
+
+  def count_visible_building(heights)
+    current_height = 0
+    heights.sum do |height|
+      if height > current_height
+        current_height = height
+        1
+      else
+        0
+      end
+    end
   end
 end
