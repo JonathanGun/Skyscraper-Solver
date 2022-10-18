@@ -6,10 +6,10 @@ class Board
   def initialize(size = 4, top_clue: nil, left_clue: nil, bottom_clue: nil, right_clue: nil)
     @size = size
     @cells = Array.new(size) { Array.new(size) { Set.new(1..size) } }
-    @top_clue = top_clue || ([nil] * size)
-    @left_clue = left_clue || ([nil] * size)
-    @bottom_clue = bottom_clue || ([nil] * size)
-    @right_clue = right_clue || ([nil] * size)
+    @top_clue = top_clue || Array.new(size) { 0 }
+    @left_clue = left_clue || Array.new(size) { 0 }
+    @bottom_clue = bottom_clue || Array.new(size) { 0 }
+    @right_clue = right_clue || Array.new(size) { 0 }
     @queue = Queue.new
   end
 
@@ -20,11 +20,17 @@ class Board
       step until @queue.empty?
       count += 1
     end
-    pp @cells
-    p "#{solved? ? 'Solved' : 'Failed to solve'} in #{count} iterations"
+    puts to_s
+    puts "#{solved? ? 'Solved' : 'Failed to solve'} in #{count} iterations"
   end
 
   private
+
+  def to_s
+    output = @cells
+    output = output.map { |row| row.map(&:first) } if solved?
+    "#{output.map { |row| row.join(' ') }.join("\n")}\n"
+  end
 
   def solved?
     @cells.all? { |row| row.all? { |cell| cell.length == 1 } }
@@ -92,7 +98,8 @@ class Board
   end
 
   def matches_clue?(combination, clue, reverse_clue)
-    count_visible_building(combination) == clue || count_visible_building(combination.reverse) == reverse_clue
+    (clue.zero? || count_visible_building(combination) == clue) &&
+      (reverse_clue.zero? || count_visible_building(combination.reverse) == reverse_clue)
   end
 
   def count_visible_building(heights)
