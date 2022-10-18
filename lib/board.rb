@@ -1,4 +1,5 @@
-require 'helper'
+require_relative 'helper'
+require 'set'
 
 class Board
   attr_reader :cells
@@ -10,18 +11,18 @@ class Board
     @left_clue = left_clue || Array.new(size) { 0 }
     @bottom_clue = bottom_clue || Array.new(size) { 0 }
     @right_clue = right_clue || Array.new(size) { 0 }
-    @queue = Queue.new
   end
 
   def process(max_iter = 1000)
     count = 0
+    @queue = Queue.new
     until solved? || count >= max_iter
       exhaustive_scan
       step until @queue.empty?
       count += 1
     end
     puts to_s
-    puts "#{solved? ? 'Solved' : 'Failed to solve'} in #{count} iterations"
+    puts "#{solved? ? 'Solved' : 'Failed to solve'} in #{count} iteration(s)"
   end
 
   private
