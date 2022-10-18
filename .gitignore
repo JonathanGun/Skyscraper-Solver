@@ -1,0 +1,5 @@
+bin/
+.bundle/
+.idea/
+Gemfile.lock
+coverage/

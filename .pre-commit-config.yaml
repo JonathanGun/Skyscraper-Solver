@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: static-file-autocorrect-using-rubocop
+        name: static-file-autocorrect-using-rubocop
+        entry: rubocop lib spec -A
+        language: ruby
+        types: [ruby]
+      - id: run-specs-using-rspec
+        name: run-specs-using-rspec
+        entry: bin/rspec
+        language: ruby
+        exclude: 'Gemfile|spec/spec_helper.rb'
+        types: [ruby]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
